@@ -3,16 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 using precioLuzApi.Services;
 using precioLuzApi.DTOs;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace precioLuzApi.Controllers
 {   
+    [Authorize("APIToken")]
     [ApiController]
     [Route("[controller]")]
-    public class PrecioController : ControllerBase
+    public class PriceController : ControllerBase
     {
         private readonly GetDataService _getDataService;
 
-        public PrecioController(GetDataService getDataService)
+        public PriceController(GetDataService getDataService)
         {
             _getDataService = getDataService;
         }
