@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using precioLuzApi.DTOs;
@@ -22,38 +23,54 @@ namespace precioLuzApi.Services
         {
             List<PriceDataDTO> data = new List<PriceDataDTO>();
 
-            HttpClient client = new HttpClient();
-            
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", Configuration["ReeToken"]);
-
-            HttpResponseMessage response = await client.GetAsync("https://api.esios.ree.es/archives/70/download_json");
-            
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
-
-            if(!string.IsNullOrEmpty(responseBody))
+            try
             {
-                JsonDocument jsonDocument = JsonDocument.Parse(responseBody);
+                HttpClient client = new HttpClient();
+            
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", Configuration["ReeToken"]);
 
-                data = JsonSerializer.Deserialize<List<PriceDataDTO>>(jsonDocument.RootElement.GetProperty("PVPC").ToString());
+                HttpResponseMessage response = await client.GetAsync("https://api.esios.ree.es/archives/70/download_json");
+                
+                response.EnsureSuccessStatusCode();
 
-                foreach(var element in data)
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                if(!string.IsNullOrEmpty(responseBody))
                 {
-                    Single newPCB = 0;
+                    JsonDocument jsonDocument = JsonDocument.Parse(responseBody);
 
-                    Single.TryParse(element.PCB, out newPCB);
+                    data = JsonSerializer.Deserialize<List<PriceDataDTO>>(jsonDocument.RootElement.GetProperty("PVPC").ToString());
 
-                    if (newPCB > 0)
+                    foreach(var element in data)
                     {
-                        element.PCB = (newPCB / 1000).ToString().Substring(0, 5);
-                    }
+                        Single newPCB = 0;
 
-                    element.Hora = element.Hora.Substring(0,2);
+                        Single.TryParse(element.PCB, out newPCB);
+
+                        if (newPCB > 0)
+                        {
+                            switch(Thread.CurrentThread.CurrentCulture.Name)
+                            {
+                                case "en-US":
+                                    element.PCB = (newPCB / 100).ToString("0,000");
+                                    break;
+
+                                default:
+                                    element.PCB = (newPCB / 1000).ToString("0.000");
+                                    break;
+                            }
+                        }
+
+                        element.Hora = element.Hora.Substring(0,2);
+                    }
                 }
             }
-
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            
             return data;
         }
     }

@@ -19,7 +19,7 @@ namespace precioLuzApi.Controllers
             _getDataService = getDataService;
         }
 
-        [HttpGet]
+        [HttpGet("")]
         public JsonResult Get()
         {
             JsonResult result = new JsonResult("");
