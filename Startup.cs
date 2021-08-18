@@ -33,6 +33,7 @@ namespace precioLuzApi
                             .AllowAnyMethod();
                     });
             });
+
             services.AddControllers();
 
             services.AddSwaggerGen(c =>
